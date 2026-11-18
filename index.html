@@ -7,8 +7,12 @@
   <link rel="stylesheet" href="css/style.css">
   <script src="js/UnityProgress.js"></script>
   <script src="js/unityloader41.js"></script>
+  <script src="js/themes.js"></script>
   <script>
-    var gameInstance = UnityLoader.instantiate("gameContainer", "data/slope.json", { onProgress: UnityProgress, Module: { onRuntimeInitialized: function() { UnityProgress(gameInstance, "complete") } } });
+    var gameInstance;
+    SlopeThemes.ready.then(function () {
+      gameInstance = UnityLoader.instantiate("gameContainer", "data/slope.json", { onProgress: UnityProgress, Module: { onRuntimeInitialized: function() { UnityProgress(gameInstance, "complete") } } });
+    });
   </script>
 </head>
 <body style="margin: 0; overflow: hidden;">
