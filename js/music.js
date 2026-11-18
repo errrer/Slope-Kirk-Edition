@@ -13,6 +13,7 @@
   function set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 
   var userPaused = get('slopeMusicPaused') === '1';
+  var loop = get('slopeMusicLoop') !== '0';          // default: loop on
   var volume = get('slopeMusicVol') !== null ? Number(get('slopeMusicVol')) : 70;
   if (!(volume >= 0 && volume <= 100)) volume = 70;
   audio.volume = volume / 100;
@@ -60,7 +61,11 @@
     if (p && p.catch) p.catch(function () { /* waits for a click/key */ });
     render();
   }
-  audio.addEventListener('ended', function () { playIndex(cur + 1); });
+  audio.addEventListener('ended', function () {
+    if (cur + 1 < songs.length) playIndex(cur + 1);       // next song
+    else if (loop) playIndex(0);                          // end of playlist: start over
+    else { cur = 0; audio.removeAttribute('src'); render(); }   // loop off: stop
+  });
   audio.addEventListener('error', function () { if (songs.length > 1) playIndex(cur + 1); });
 
   function toggle() {
@@ -119,6 +124,7 @@
       '.sm-x{cursor:pointer;color:#f55;font-weight:bold;padding:0 4px}' +
       '.sm-empty{opacity:.7;font-size:12px}' +
       '#sm-box .sm-btns button{margin:4px 4px 0 0}' +
+      '.sm-loop{display:block;margin:8px 0 0;cursor:pointer}' +
       '#sm-vol{width:100%;margin-top:8px;accent-color:#0f0}';
     document.head.appendChild(css);
 
@@ -128,6 +134,7 @@
       '<h3>Custom songs</h3>' +
       '<div id="sm-list"></div>' +
       '<div class="sm-btns"><button id="sm-add">Add mp3...</button><button id="sm-toggle">▶ Play</button><button id="sm-next">⏭ Next</button></div>' +
+      '<label class="sm-loop"><input id="sm-loop" type="checkbox"' + (loop ? ' checked' : '') + '> Loop playlist</label>' +
       '<input id="sm-file" type="file" accept="audio/*,.mp3" multiple style="display:none">' +
       '<input id="sm-vol" type="range" min="0" max="100" value="' + volume + '" title="Volume">' +
       '<div id="sl-note">Songs play on loop alongside the game and are saved in this browser. Use the speaker button in the game to turn the original sounds off.</div>';
@@ -135,6 +142,7 @@
 
     box.querySelector('#sm-add').addEventListener('click', function () { box.querySelector('#sm-file').click(); });
     box.querySelector('#sm-toggle').addEventListener('click', toggle);
+    box.querySelector('#sm-loop').addEventListener('change', function (e) { loop = e.target.checked; set('slopeMusicLoop', loop ? '1' : '0'); });
     box.querySelector('#sm-next').addEventListener('click', function () { if (songs.length) { userPaused = false; set('slopeMusicPaused', '0'); playIndex(cur + 1); } });
     box.querySelector('#sm-vol').addEventListener('input', function (e) {
       volume = Number(e.target.value); audio.volume = volume / 100; set('slopeMusicVol', String(volume));
@@ -178,5 +186,5 @@
     if (panel) mount(panel);
   });
 
-  window.SlopeMusic = { state: function () { return { songs: songs.length, paused: audio.paused, t: audio.currentTime, src: !!audio.src, vol: audio.volume }; } };
+  window.SlopeMusic = { state: function () { return { songs: songs.length, cur: cur, loop: loop, paused: audio.paused, t: audio.currentTime, src: !!audio.src, vol: audio.volume }; } };
 })();
